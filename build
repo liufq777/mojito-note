@@ -1,0 +1,18 @@
+#!/bin/sh
+
+root_dir="/root/mojito-web"
+
+cd $root_dir
+git pull
+mvn clean package -DskipTests=true
+
+cd ${root_dir}/mojito-note/target
+mv -f mojito-note-1.0-SNAPSHOT.jar ${root_dir}/mojito-note/docker
+
+docker stop mojito-note
+docker rm mojito-note
+docker rmi mojito-note
+
+cd ${root_dir}/mojito-note/docker
+docker build -t mojito-note .
+docker run --name mojito-note -d -p 8086:8086 mojito-note

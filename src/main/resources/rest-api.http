@@ -1,0 +1,28 @@
+### 上传文件/文件夹
+POST http://localhost:8086/cloud-disk
+Content-Type: application/json
+
+{
+  "parentId": 289,
+  "isFolder": true,
+  "fileName": "文件夹2",
+  "fileUrl": null
+}
+
+### 文件列表
+GET http://localhost:8086/cloud-disk?parentId=289
+
+### 笔记列表
+GET http://localhost:8086/note?userId=1
+Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxIn0.Y4nHCEunF6YCdPxRCftfhnB7uetWwaih9ZAiQumJ4SQ
+
+### 用户登录
+POST http://localhost:8086/user/login
+Content-Type: application/json
+
+{
+    "mobileNo": "18667191781",
+    "verifyCode": "1234"
+}
+
+###

@@ -1,0 +1,19 @@
+spring:
+  profiles:
+    active: dev
+  redis:
+    database: 0 # Redis数据库索引（默认为0）
+    host: 175.24.93.154 # Redis服务器地址
+    port: 6379 # Redis服务器连接端口
+    #    password: fq1781 # Redis服务器连接密码（默认为空）
+    timeout: 300 # 连接超时时间（毫秒）
+#  jackson:
+#    date-format: yyyy-MM-dd HH:mm:ss
+
+server:
+  port: 8086
+  tomcat:
+    uri-encoding: UTF-8
+    threads:
+      max: 1000
+      min-spare: 30
