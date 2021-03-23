@@ -1,24 +1,22 @@
-package com.mojito.note.pojo.request;
+package com.mojito.note.pojo.dto;
 
-import lombok.Data;
-import org.hibernate.validator.constraints.NotBlank;
+import com.mojito.note.pojo.constant.PermissionEnum;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * description
  *
  * @author liufengqiang <liufengqiang@touchealth.com>
- * @date 2020-07-28 10:52
+ * @date 2019-12-22 12:53
  */
-@Data
-public class NoteRequest {
+@Getter
+@Setter
+public class NoteListDto {
 
     private Long id;
-    /** 标题 */
-    @NotBlank(message = "标题不能为空")
+    /** 笔记名 */
     private String name;
-    /** 内容 */
-    @NotBlank(message = "内容不能为空")
-    private String content;
     /** 是否置顶 */
     private Boolean isSetTop;
     /** 分类id */
@@ -28,12 +26,8 @@ public class NoteRequest {
     /** 权限 0.公开 1.自己可见 2.匿名发表
      * @see PermissionEnum */
     private Integer permission;
-//    /** 创建时间 */
-//    private LocalDateTime createdAt;
     /** 插图 */
     private String picture;
-    /** 是否分类 */
-    private Boolean isCategory;
     /** 笔记类型 0.开发 1.生活 2.杂文 */
     private Integer noteType;
 }

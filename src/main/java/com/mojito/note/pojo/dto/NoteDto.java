@@ -29,7 +29,7 @@ public class NoteDto {
     /** 分类id */
     private Long categoryId;
     /** 分类名 */
-    private String categoryName;
+    private String category;
     /** 权限 0.公开 1.自己可见 2.匿名发表
      * @see PermissionEnum */
     private Integer permission;
@@ -38,6 +38,8 @@ public class NoteDto {
     private LocalDateTime createdAt;
     /** 插图 */
     private String picture;
+    /** 笔记类型 0.开发 1.生活 2.杂文 */
+    private Integer noteType;
 
     /** 用户id */
     private Long userId;

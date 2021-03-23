@@ -19,5 +19,10 @@ public class CategoryDto {
     /** todo数量 */
     private Integer num;
 
-    private List<NoteDto> notes;
+    private List<NoteListDto> notes;
+
+    public CategoryDto(String name, List<NoteListDto> notes) {
+        this.name = name;
+        this.notes = notes;
+    }
 }

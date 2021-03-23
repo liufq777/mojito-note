@@ -24,4 +24,6 @@ public class NoteParam {
     private List<Integer> permissions;
     /** 搜索 */
     private String search;
+    /** 笔记类型 0.开发 1.生活 2.杂文 */
+    private Integer noteType;
 }

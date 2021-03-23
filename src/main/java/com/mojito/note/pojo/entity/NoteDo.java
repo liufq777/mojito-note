@@ -24,6 +24,8 @@ public class NoteDo extends BaseEntity {
     private Boolean isSetTop;
     /** 分类id */
     private Long categoryId;
+    /** 笔记分类 */
+    private String category;
     /** 权限 0.公开 1.自己可见 2.匿名发表
      * @see PermissionEnum */
     private Integer permission;
@@ -31,4 +33,6 @@ public class NoteDo extends BaseEntity {
     private String picture;
     /** 是否分类 */
     private Boolean isCategory;
+    /** 笔记类型 0.开发 1.生活 2.杂文 */
+    private Integer noteType;
 }

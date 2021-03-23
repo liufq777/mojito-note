@@ -1,6 +1,5 @@
 package com.mojito.note.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.mojito.common.BaseHelper;
 import com.mojito.common.Response;
 import com.mojito.common.util.IgnorePropertiesUtils;
@@ -8,13 +7,12 @@ import com.mojito.common.util.MarkdownUtils;
 import com.mojito.note.helper.PermissionHelper;
 import com.mojito.note.pojo.dto.CategoryDto;
 import com.mojito.note.pojo.dto.NoteDto;
-import com.mojito.note.pojo.entity.CategoryDo;
+import com.mojito.note.pojo.dto.NoteListDto;
 import com.mojito.note.pojo.entity.NoteDo;
 import com.mojito.note.pojo.param.NoteParam;
 import com.mojito.note.pojo.request.NoteRequest;
 import com.mojito.note.service.CategoryService;
 import com.mojito.note.service.NoteService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -23,8 +21,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author liufengqiang
@@ -43,34 +43,49 @@ public class NoteController {
      * 笔记列表
      */
     @GetMapping
-    public Response list(@RequestAttribute Long loginId, @RequestParam Long userId, String search) {
+    public Response list(@RequestAttribute Long loginId, @RequestParam Long userId, @RequestParam(defaultValue = "0") Integer noteType, String search) {
         NoteParam param = new NoteParam();
         param.setUserId(userId);
         param.setPermissions(PermissionHelper.getPermission(userId, loginId));
         param.setSearch(search);
+        param.setNoteType(noteType);
         List<NoteDo> notes = noteService.listByParam(param);
         if (CollectionUtils.isEmpty(notes)) {
             return Response.ok();
         }
 
-        Map<Long, List<NoteDto>> noteMap = new HashMap<>();
+        Map<String, List<NoteListDto>> noteMap = new LinkedHashMap<>();
         notes.forEach(o -> {
-            List<NoteDto> noteDtos = noteMap.get(o.getCategoryId());
-            if (noteDtos == null) {
-                noteDtos = new ArrayList<>();
+            List<NoteListDto> noteDos = noteMap.get(o.getCategory());
+            if (noteDos == null) {
+                noteDos = new ArrayList<>();
             }
-            noteDtos.add(BaseHelper.r2t(o, NoteDto.class));
-            noteMap.put(o.getCategoryId(), noteDtos);
+            noteDos.add(BaseHelper.r2t(o, NoteListDto.class));
+            noteMap.put(o.getCategory(), noteDos);
         });
 
-        List<CategoryDo> categories = categoryService.list(new QueryWrapper<CategoryDo>().lambda()
-                .in(CategoryDo::getId, notes.stream().map(NoteDo::getCategoryId).collect(Collectors.toSet()))
-                .orderByDesc(CategoryDo::getUpdatedAt));
-        List<CategoryDto> dtos = categories.stream().map(o -> {
-            CategoryDto dto = BaseHelper.r2t(o, CategoryDto.class);
-            dto.setNotes(noteMap.get(o.getId()));
-            return dto;
-        }).collect(Collectors.toList());
+//        Map<String, List<NoteDo>> noteMap = notes.stream().collect(Collectors.groupingBy(NoteDo::getCategory, LinkedHashMap::new, Collectors.toList()));
+        List<CategoryDto> dtos = new ArrayList<>();
+        noteMap.forEach((k, v) -> dtos.add(new CategoryDto(k, v)));
+
+//        Map<Long, List<NoteDto>> noteMap = new HashMap<>();
+//        notes.forEach(o -> {
+//            List<NoteDto> noteDtos = noteMap.get(o.getCategoryId());
+//            if (noteDtos == null) {
+//                noteDtos = new ArrayList<>();
+//            }
+//            noteDtos.add(BaseHelper.r2t(o, NoteDto.class));
+//            noteMap.put(o.getCategoryId(), noteDtos);
+//        });
+
+//        List<CategoryDo> categories = categoryService.list(new QueryWrapper<CategoryDo>().lambda()
+//                .in(CategoryDo::getId, notes.stream().map(NoteDo::getCategoryId).collect(Collectors.toSet()))
+//                .orderByDesc(CategoryDo::getUpdatedAt));
+//        List<CategoryDto> dtos = categories.stream().map(o -> {
+//            CategoryDto dto = BaseHelper.r2t(o, CategoryDto.class);
+//            dto.setNotes(noteMap.get(o.getId()));
+//            return dto;
+//        }).collect(Collectors.toList());
         return Response.ok(dtos);
     }
 
@@ -88,11 +103,11 @@ public class NoteController {
             BeanUtils.copyProperties(request, note, IgnorePropertiesUtils.getNullPropertyNames(request));
         }
 
-        if (request.getCategoryId() == null) {
-            Assert.isTrue(StringUtils.isNotBlank(request.getCategoryName()), "分类不能为空");
-            CategoryDo categoryDo = categoryService.getByCategoryName(loginId, request.getCategoryName(), 0);
-            note.setCategoryId(categoryDo.getId());
-        }
+//        if (request.getCategoryId() == null) {
+//            Assert.isTrue(StringUtils.isNotBlank(request.getCategoryName()), "分类不能为空");
+//            CategoryDo categoryDo = categoryService.getByCategoryName(loginId, request.getCategoryName(), 0);
+//            note.setCategoryId(categoryDo.getId());
+//        }
 
         if (request.getId() == null) {
             noteService.save(note);
@@ -116,8 +131,8 @@ public class NoteController {
         NoteDto dto = BaseHelper.r2t(note, NoteDto.class);
         dto.setContentHtml(MarkdownUtils.markdownToHtmlExtensions(dto.getContent()));
 
-        CategoryDo categoryDo = categoryService.getById(note.getCategoryId());
-        dto.setCategoryName(categoryDo.getName());
+//        CategoryDo categoryDo = categoryService.getById(note.getCategoryId());
+//        dto.setCategory(categoryDo.getName());
         return Response.ok(dto);
     }
 

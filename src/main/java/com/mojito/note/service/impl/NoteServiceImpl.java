@@ -25,10 +25,11 @@ public class NoteServiceImpl extends ServiceImpl<NoteMapper, NoteDo> implements 
     public List<NoteDo> listByParam(NoteParam param) {
         return list(Wrappers.<NoteDo>lambdaQuery()
                 .eq(NoteDo::getUserId, param.getUserId())
+                .eq(NoteDo::getNoteType, param.getNoteType())
                 .in(!CollectionUtils.isEmpty(param.getPermissions()), NoteDo::getPermission, param.getPermissions())
                 .like(StringUtils.isNotBlank(param.getSearch()), NoteDo::getName, param.getSearch())
                 .or().like(StringUtils.isNotBlank(param.getSearch()), NoteDo::getContent, param.getSearch())
-                .orderByDesc(NoteDo::getIsSetTop)
+//                .orderByDesc(NoteDo::getIsSetTop)
                 .orderByDesc(NoteDo::getUpdatedAt)
         );
     }
