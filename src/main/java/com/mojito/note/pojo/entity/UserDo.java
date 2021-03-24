@@ -18,6 +18,8 @@ public class UserDo extends BaseEntity {
 
     /** 手机号 */
     private String mobileNo;
+    /** 密码 */
+    private String password;
     /** 昵称 */
     private String nickname;
     /** 头像 */

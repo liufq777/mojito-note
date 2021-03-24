@@ -2,8 +2,8 @@ package com.mojito.note.pojo.request;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.validator.constraints.NotEmpty;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
 /**
@@ -16,9 +16,11 @@ import javax.validation.constraints.Pattern;
 @Setter
 public class LoginRequest {
 
+    /** 登录类型 0.账号密码 1.验证码 */
+    private Integer loginType = 0;
     @Pattern(regexp = "^1[0-9]{10}$",message = "手机号格式错误")
-    @NotEmpty(message = "手机号不能为空")
+    @NotBlank(message = "手机号不能为空")
     private String mobileNo;
-    @NotEmpty(message = "验证码不能为空")
+    /** 验证码/密码 */
     private String verifyCode;
 }

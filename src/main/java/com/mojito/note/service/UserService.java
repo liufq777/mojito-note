@@ -11,17 +11,10 @@ import com.mojito.note.pojo.entity.UserDo;
  */
 public interface UserService extends IService<UserDo> {
 
-    //    void save(SysUser userBo);
-//
-//    SysUser findById(Long userId);
-//
+    /**
+     * 验证码登录
+     * @param mobileNo
+     * @return
+     */
     UserDo getByMobileNo(String mobileNo);
-//
-//    /**
-//     * 根据笔记权限返回用户信息
-//     * @param permission
-//     * @param userId
-//     * @return
-//     */
-//    SysUser findByPermission(Integer permission, Long userId);
 }
