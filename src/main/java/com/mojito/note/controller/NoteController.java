@@ -64,28 +64,8 @@ public class NoteController {
             noteMap.put(o.getCategory(), noteDos);
         });
 
-//        Map<String, List<NoteDo>> noteMap = notes.stream().collect(Collectors.groupingBy(NoteDo::getCategory, LinkedHashMap::new, Collectors.toList()));
         List<CategoryDto> dtos = new ArrayList<>();
         noteMap.forEach((k, v) -> dtos.add(new CategoryDto(k, v)));
-
-//        Map<Long, List<NoteDto>> noteMap = new HashMap<>();
-//        notes.forEach(o -> {
-//            List<NoteDto> noteDtos = noteMap.get(o.getCategoryId());
-//            if (noteDtos == null) {
-//                noteDtos = new ArrayList<>();
-//            }
-//            noteDtos.add(BaseHelper.r2t(o, NoteDto.class));
-//            noteMap.put(o.getCategoryId(), noteDtos);
-//        });
-
-//        List<CategoryDo> categories = categoryService.list(new QueryWrapper<CategoryDo>().lambda()
-//                .in(CategoryDo::getId, notes.stream().map(NoteDo::getCategoryId).collect(Collectors.toSet()))
-//                .orderByDesc(CategoryDo::getUpdatedAt));
-//        List<CategoryDto> dtos = categories.stream().map(o -> {
-//            CategoryDto dto = BaseHelper.r2t(o, CategoryDto.class);
-//            dto.setNotes(noteMap.get(o.getId()));
-//            return dto;
-//        }).collect(Collectors.toList());
         return Response.ok(dtos);
     }
 
@@ -102,12 +82,6 @@ public class NoteController {
             note = noteService.getById(request.getId());
             BeanUtils.copyProperties(request, note, IgnorePropertiesUtils.getNullPropertyNames(request));
         }
-
-//        if (request.getCategoryId() == null) {
-//            Assert.isTrue(StringUtils.isNotBlank(request.getCategoryName()), "分类不能为空");
-//            CategoryDo categoryDo = categoryService.getByCategoryName(loginId, request.getCategoryName(), 0);
-//            note.setCategoryId(categoryDo.getId());
-//        }
 
         if (request.getId() == null) {
             noteService.save(note);
@@ -130,9 +104,6 @@ public class NoteController {
 
         NoteDto dto = BaseHelper.r2t(note, NoteDto.class);
         dto.setContentHtml(MarkdownUtils.markdownToHtmlExtensions(dto.getContent()));
-
-//        CategoryDo categoryDo = categoryService.getById(note.getCategoryId());
-//        dto.setCategory(categoryDo.getName());
         return Response.ok(dto);
     }
 

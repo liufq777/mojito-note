@@ -125,7 +125,7 @@ public class MarkdownUtils {
             if ("pre".equals(tagName)) {
                 attributes.put("class", "custom");
             }
-            if ("code".equals(tagName)) {
+            if (node.getParent() instanceof Document && "code".equals(tagName)) {
                 attributes.put("class", "hljs");
             }
         }
