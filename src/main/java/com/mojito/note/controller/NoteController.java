@@ -5,6 +5,7 @@ import com.mojito.common.Response;
 import com.mojito.common.util.IgnorePropertiesUtils;
 import com.mojito.common.util.MarkdownUtils;
 import com.mojito.note.helper.PermissionHelper;
+import com.mojito.note.pojo.constant.PermissionEnum;
 import com.mojito.note.pojo.dto.CategoryDto;
 import com.mojito.note.pojo.dto.NoteDto;
 import com.mojito.note.pojo.dto.NoteListDto;
@@ -43,7 +44,8 @@ public class NoteController {
      * 笔记列表
      */
     @GetMapping
-    public Response list(@RequestAttribute Long loginId, @RequestParam Long userId, @RequestParam(defaultValue = "0") Integer noteType, String search) {
+    public Response list(@RequestAttribute Long loginId, @RequestParam Long userId,
+                         @RequestParam(defaultValue = "0") Integer noteType, String search) {
         NoteParam param = new NoteParam();
         param.setUserId(userId);
         param.setPermissions(PermissionHelper.getPermission(userId, loginId));
@@ -98,9 +100,12 @@ public class NoteController {
      * 笔记详情
      */
     @GetMapping("/{id}")
-    public Response list(@PathVariable Long id) {
+    public Response list(@RequestAttribute Long loginId, @PathVariable Long id) {
         NoteDo note = noteService.getById(id);
         Assert.notNull(note, "笔记不存在");
+        if (loginId == null) {
+            Assert.isTrue(!PermissionEnum.PRIVATE.getValue().equals(note.getPermission()), "没有权限");
+        }
 
         NoteDto dto = BaseHelper.r2t(note, NoteDto.class);
         dto.setContentHtml(MarkdownUtils.markdownToHtmlExtensions(dto.getContent()));
