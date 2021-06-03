@@ -25,4 +25,18 @@ Content-Type: application/json
     "verifyCode": "1234"
 }
 
+### 新增计划项
+POST http://localhost:8086/todo-plan/item
+Content-Type: application/json
+Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxIn0.Y4nHCEunF6YCdPxRCftfhnB7uetWwaih9ZAiQumJ4SQ
+
+{
+  "todoPlanId": 305,
+  "content": "跳表实现原理"
+}
+
+### 计划列表
+GET http://localhost:8086/todo-plan
+Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxIn0.Y4nHCEunF6YCdPxRCftfhnB7uetWwaih9ZAiQumJ4SQ
+
 ###

@@ -42,8 +42,6 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         HandlerMethod handlerMethod = (HandlerMethod) object;
         Method method = handlerMethod.getMethod();
 
-        httpServletRequest.setAttribute("loginId", 0L);
-
         //检查是否有passToken注释，有则跳过认证
         if (method.isAnnotationPresent(PassToken.class)) {
             PassToken passToken = method.getAnnotation(PassToken.class);

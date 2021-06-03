@@ -1,29 +1,33 @@
 package com.mojito.note.pojo.request;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.validator.constraints.NotEmpty;
+import lombok.Data;
+
+import javax.validation.constraints.NotBlank;
 
 /**
- * description
- *
- * @author liufengqiang <liufengqiang@touchealth.com>
- * @date 2020-01-29 15:47
+ * @author liufengqiang
+ * @date 2021-06-02 14:23:37
  */
-@Getter
-@Setter
+@Data
 public class TodoPlanRequest {
 
     private Long id;
-    /** 内容 */
-    private String content;
-    /** 分类名 */
-    private Long categoryId;
-    /** 分类名 */
-    @NotEmpty(message = "分类名不能为空")
-    private String categoryName;
-    /** 是否完成 */
-    private Boolean isFinish;
-    /** 是否置顶 */
-    private Boolean isSetTop;
+    /**
+     * 标题
+     */
+    @NotBlank(message = "标题不能为空")
+    private String title;
+    /**
+     * 分类
+     */
+    @NotBlank(message = "分类不能为空")
+    private String category;
+    /**
+     * 描述
+     */
+    private String description;
+    /**
+     * 计划项
+     */
+    private String todoPlanItem;
 }

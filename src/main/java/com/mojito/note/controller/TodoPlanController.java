@@ -1,26 +1,27 @@
 package com.mojito.note.controller;
 
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.mojito.common.BaseHelper;
 import com.mojito.common.Response;
 import com.mojito.common.util.DateUtils;
-import com.mojito.common.util.IgnorePropertiesUtils;
-import com.mojito.note.pojo.dto.TodoListDto;
-import com.mojito.note.pojo.entity.CategoryDo;
+import com.mojito.note.pojo.dto.TodoPlanDto;
 import com.mojito.note.pojo.entity.TodoPlan;
-import com.mojito.note.pojo.param.CategoryParam;
+import com.mojito.note.pojo.entity.TodoPlanItem;
 import com.mojito.note.pojo.request.TodoPlanRequest;
-import com.mojito.note.service.CategoryService;
+import com.mojito.note.service.TodoPlanItemService;
 import com.mojito.note.service.TodoPlanService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
-import java.util.*;
+import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -36,114 +37,85 @@ public class TodoPlanController {
     @Resource
     private TodoPlanService todoPlanService;
     @Resource
-    private CategoryService categoryService;
+    private TodoPlanItemService todoPlanItemService;
 
     /**
-     * todo列表
+     * 计划列表
      */
     @GetMapping
-    public Response list() {
-        List<TodoPlan> todoPlans = todoPlanService.listByUserId(1L);
+    public Response list(@RequestAttribute Long loginId) {
+        List<TodoPlan> todoPlans = todoPlanService.list(Wrappers.<TodoPlan>lambdaQuery()
+                .eq(TodoPlan::getUserId, loginId)
+                .orderByDesc(TodoPlan::getUpdatedAt));
         if (CollectionUtils.isEmpty(todoPlans)) {
             return Response.ok();
         }
 
-        Map<Long, List<TodoListDto.TodoDto>> noteMap = new HashMap<>();
-        todoPlans.forEach(o -> {
-            List<TodoListDto.TodoDto> noteDtos = noteMap.get(o.getCategoryId());
-            if (noteDtos == null) {
-                noteDtos = new ArrayList<>();
-            }
-            TodoListDto.TodoDto todoDto = BaseHelper.r2t(o, TodoListDto.TodoDto.class);
-            try {
-                String[] split = o.getContent().split("\n");
-                for (int i = 0; i < split.length; i++) {
-                    if (StringUtils.isNotBlank(split[i]) && StringUtils.isBlank(todoDto.getTitle())) {
-                        todoDto.setTitle(split[i]);
-                    }
-                    if (i != 0 && StringUtils.isNotBlank(split[i]) && StringUtils.isBlank(todoDto.getDescribe())) {
-                        todoDto.setDescribe(split[i]);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        List<TodoPlanItem> todoPlanItems = todoPlanItemService.list(Wrappers.<TodoPlanItem>lambdaQuery()
+                .in(TodoPlanItem::getTodoPlanId, todoPlans.stream().map(TodoPlan::getId).collect(Collectors.toList()))
+                .orderByAsc(TodoPlanItem::getIsComplete)
+                .orderByDesc(TodoPlanItem::getUpdatedAt));
+        Map<Long, List<TodoPlanItem>> todoPlanItemMap = todoPlanItems.stream().collect(Collectors.groupingBy(TodoPlanItem::getTodoPlanId));
+        LinkedHashMap<String, List<TodoPlan>> todoPlanMap = todoPlans.stream().collect(Collectors.groupingBy(TodoPlan::getCategory, LinkedHashMap::new, Collectors.toList()));
 
-            todoDto.setCreatedAt(DateUtils.formatPretty(o.getCreatedAt()));
-            noteDtos.add(todoDto);
-            noteMap.put(o.getCategoryId(), noteDtos);
+        List<TodoPlanDto> dtos = new ArrayList<>();
+        todoPlanMap.forEach((k, v) -> {
+            List<TodoPlanDto.TodoDto> todoDtos = v.stream().map(o -> {
+                TodoPlanDto.TodoDto todoDto = BaseHelper.r2t(o, TodoPlanDto.TodoDto.class);
+                todoDto.setTodoPlanItems(BaseHelper.r2t(todoPlanItemMap.get(o.getId()), TodoPlanDto.TodoPlanItemDto.class));
+                todoDto.setCreatedAt(DateUtils.formatPretty(o.getCreatedAt()));
+                return todoDto;
+            }).collect(Collectors.toList());
+            dtos.add(new TodoPlanDto(k, todoDtos));
         });
-
-        List<CategoryDo> categories = categoryService.listByModuleType(1);
-        List<TodoListDto> dtos = categories.stream().map(o -> {
-            TodoListDto dto = BaseHelper.r2t(o, TodoListDto.class);
-            dto.setTodos(noteMap.get(o.getId()));
-            return dto;
-        }).collect(Collectors.toList());
         return Response.ok(dtos);
     }
 
     /**
-     * 新增/编辑todo
+     * 新增计划
      */
     @PostMapping
-    public Response save(@RequestAttribute Long loginId, @RequestBody TodoPlanRequest request) {
-        TodoPlan todoPlanBo;
-        if (request.getId() == null) {
-            todoPlanBo = BaseHelper.r2t(request, TodoPlan.class);
-            todoPlanBo.setUserId(loginId);
+    public Response save(@RequestAttribute Long loginId, @Valid @RequestBody TodoPlanRequest request) {
+        if (request.getId() != null) {
+            TodoPlan todoPlan = todoPlanService.getById(request.getId());
+            BeanUtils.copyProperties(request, todoPlan);
+            todoPlanService.updateById(todoPlan);
 
-            if (request.getCategoryId() == null) {
-                if (StringUtils.isNotBlank(request.getCategoryName())) {
-                    CategoryParam param = new CategoryParam();
-                    param.setUserId(loginId);
-                    param.setName(request.getCategoryName());
-                    CategoryDo category = categoryService.getByCategoryName(loginId, request.getCategoryName(), 1);
-                    todoPlanBo.setCategoryId(category.getId());
-                } else {
-                    return Response.error("分类id和分类名不能都为空");
-                }
+            if (StringUtils.isNotBlank(request.getTodoPlanItem())) {
+                TodoPlanItem todoPlanItem = new TodoPlanItem();
+                todoPlanItem.setUserId(loginId);
+                todoPlanItem.setTodoPlanId(request.getId());
+                todoPlanItem.setContent(request.getTodoPlanItem());
+                todoPlanItemService.save(todoPlanItem);
             }
-        } else {
-            todoPlanBo = todoPlanService.getById(request.getId());
-            BeanUtils.copyProperties(request, todoPlanBo, IgnorePropertiesUtils.getNullPropertyNames(request));
-            todoPlanBo.setUpdatedAt(LocalDateTime.now());
         }
-        todoPlanService.saveOrUpdate(todoPlanBo);
-
-        categoryService.updateUpdateAt(todoPlanBo.getCategoryId());
         return Response.ok();
     }
 
     /**
-     * 完成/未完成todo
+     * 删除计划项
      */
-    @PutMapping("/{id}/finish")
-    public Response finish(@RequestAttribute Long loginId, @PathVariable Long id) {
-        TodoPlan todoPlanBo = todoPlanService.getById(id);
-        Assert.notNull(todoPlanBo, "记录不存在");
-        Assert.isTrue(loginId.equals(todoPlanBo.getUserId()), "没有权限");
-
-        todoPlanService.update(new UpdateWrapper<TodoPlan>().lambda()
-                .set(TodoPlan::getIsFinish, !todoPlanBo.getIsFinish())
-                .eq(TodoPlan::getId, id));
-
-        categoryService.updateUpdateAt(todoPlanBo.getCategoryId());
-        return Response.ok();
-    }
-
-    /**
-     * 删除todo
-     */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/item/{id}")
     public Response delete(@RequestAttribute Long loginId, @PathVariable Long id) {
-        TodoPlan todoPlanBo = todoPlanService.getById(id);
-        Assert.notNull(todoPlanBo, "记录不存在");
+        TodoPlanItem todoPlanItem = todoPlanItemService.getById(id);
+        Assert.notNull(todoPlanItem, "记录不存在");
+        Assert.isTrue(loginId.equals(todoPlanItem.getUserId()), "没有权限");
+        todoPlanItemService.removeById(id);
+        return Response.ok();
+    }
 
-        Assert.isTrue(loginId.equals(todoPlanBo.getUserId()), "没有权限");
-        todoPlanService.removeById(id);
+    /**
+     * 更新完成状态
+     */
+    @PutMapping("/item/{id}/is-complete")
+    public Response finish(@RequestAttribute Long loginId, @PathVariable Long id) {
+        TodoPlanItem todoPlanItem = todoPlanItemService.getById(id);
+        Assert.notNull(todoPlanItem, "记录不存在");
+        Assert.isTrue(loginId.equals(todoPlanItem.getUserId()), "没有权限");
 
-        categoryService.updateUpdateAt(todoPlanBo.getCategoryId());
+        todoPlanItemService.update(Wrappers.<TodoPlanItem>lambdaUpdate()
+                .set(TodoPlanItem::getIsComplete, !todoPlanItem.getIsComplete())
+                .eq(TodoPlanItem::getId, id));
         return Response.ok();
     }
 }
