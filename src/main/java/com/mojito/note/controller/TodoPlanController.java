@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -76,19 +77,36 @@ public class TodoPlanController {
      */
     @PostMapping
     public Response save(@RequestAttribute Long loginId, @Valid @RequestBody TodoPlanRequest request) {
+        TodoPlan todoPlan;
         if (request.getId() != null) {
-            TodoPlan todoPlan = todoPlanService.getById(request.getId());
+            todoPlan = todoPlanService.getById(request.getId());
             BeanUtils.copyProperties(request, todoPlan);
-            todoPlanService.updateById(todoPlan);
-
-            if (StringUtils.isNotBlank(request.getTodoPlanItem())) {
-                TodoPlanItem todoPlanItem = new TodoPlanItem();
-                todoPlanItem.setUserId(loginId);
-                todoPlanItem.setTodoPlanId(request.getId());
-                todoPlanItem.setContent(request.getTodoPlanItem());
-                todoPlanItemService.save(todoPlanItem);
-            }
+            todoPlan.setUpdatedAt(LocalDateTime.now());
+        } else {
+            todoPlan = BaseHelper.r2t(request, TodoPlan.class);
+            todoPlan.setUserId(loginId);
         }
+        todoPlanService.saveOrUpdate(todoPlan);
+
+        if (StringUtils.isNotBlank(request.getTodoPlanItem())) {
+            TodoPlanItem todoPlanItem = new TodoPlanItem();
+            todoPlanItem.setUserId(loginId);
+            todoPlanItem.setTodoPlanId(todoPlan.getId());
+            todoPlanItem.setContent(request.getTodoPlanItem());
+            todoPlanItemService.save(todoPlanItem);
+        }
+        return Response.ok();
+    }
+
+    /**
+     * 删除计划
+     */
+    @DeleteMapping("/{id}")
+    public Response deletePlan(@RequestAttribute Long loginId, @PathVariable Long id) {
+        TodoPlan todoPlan = todoPlanService.getById(id);
+        Assert.notNull(todoPlan, "记录不存在");
+        Assert.isTrue(loginId.equals(todoPlan.getUserId()), "没有权限");
+        todoPlanService.removeById(id);
         return Response.ok();
     }
 
